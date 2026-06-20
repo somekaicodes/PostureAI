@@ -1,0 +1,3 @@
+[submodule "Vendor/libposture"]
+	path = Vendor/libposture
+	url = https://github.com/somekaicodes/libposture.git
