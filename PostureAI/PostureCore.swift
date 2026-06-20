@@ -1,7 +1,28 @@
 import Foundation
+import simd
+
+// The 3D joints needed to analyze one squat frame. Positions are in metres,
+// matching what ARKit's body-tracking skeleton provides.
+struct SquatJoints {
+    var shoulder: SIMD3<Float>
+    var hip: SIMD3<Float>
+    var leftKnee: SIMD3<Float>
+    var rightKnee: SIMD3<Float>
+    var leftAnkle: SIMD3<Float>
+    var rightAnkle: SIMD3<Float>
+}
+
+// The analysis result for one frame, in plain Swift types.
+struct SquatResult {
+    var repCount: Int
+    var kneeAngle: Float          // smoothed, degrees
+    var repJustCompleted: Bool
+    var insufficientDepth: Bool
+    var excessiveForwardLean: Bool
+    var kneesCavingIn: Bool
+}
 
 // Swift-friendly wrapper around the libposture C analysis session.
-// Holds one squat-analysis session and feeds it frames of 3D joints.
 final class PostureCore {
     private let session: OpaquePointer
 
@@ -19,7 +40,29 @@ final class PostureCore {
     }
 
     // Feed one frame of joints and get the latest analysis result.
-    func update(_ frame: PostureFrame) -> PostureResult {
-        posture_session_update(session, frame)
+    func update(joints: SquatJoints, timestamp: TimeInterval) -> SquatResult {
+        var frame = PostureFrame()
+        frame.timestamp = timestamp
+        frame.shoulder = vec(joints.shoulder)
+        frame.hip = vec(joints.hip)
+        frame.leftKnee = vec(joints.leftKnee)
+        frame.rightKnee = vec(joints.rightKnee)
+        frame.leftAnkle = vec(joints.leftAnkle)
+        frame.rightAnkle = vec(joints.rightAnkle)
+
+        let result = posture_session_update(session, frame)
+
+        return SquatResult(
+            repCount: Int(result.repCount),
+            kneeAngle: result.kneeAngle,
+            repJustCompleted: result.repJustCompleted != 0,
+            insufficientDepth: result.insufficientDepth != 0,
+            excessiveForwardLean: result.excessiveForwardLean != 0,
+            kneesCavingIn: result.kneesCavingIn != 0
+        )
+    }
+
+    private func vec(_ v: SIMD3<Float>) -> PostureVec3 {
+        PostureVec3(x: v.x, y: v.y, z: v.z)
     }
 }
