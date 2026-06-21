@@ -23,6 +23,7 @@ struct BodyTrackingView: UIViewRepresentable {
 
     final class Coordinator {
         private let core = PostureCore()
+        private let overlay = SkeletonOverlay()
         private let onResult: (SquatResult) -> Void
         private var frameSubscription: Cancellable?
 
@@ -32,11 +33,14 @@ struct BodyTrackingView: UIViewRepresentable {
 
         // Process one body-tracking frame on every scene update (main thread).
         func start(on arView: ARView) {
+            overlay.addToScene(arView)
             frameSubscription = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak self, weak arView] _ in
                 guard let self, let frame = arView?.session.currentFrame else { return }
-                guard let body = frame.anchors.compactMap({ $0 as? ARBodyAnchor }).first,
-                      let joints = Coordinator.squatJoints(from: body) else { return }
+                guard let body = frame.anchors.compactMap({ $0 as? ARBodyAnchor }).first else { return }
 
+                self.overlay.update(with: body)
+
+                guard let joints = Coordinator.squatJoints(from: body) else { return }
                 let result = self.core.update(joints: joints, timestamp: frame.timestamp)
                 self.onResult(result)
             }
