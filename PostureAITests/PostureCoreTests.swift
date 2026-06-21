@@ -11,7 +11,8 @@ struct PostureCoreTests {
     private func standing() -> SquatJoints {
         SquatJoints(
             shoulder: [0, 2.6, 0],
-            hip: [0, 2.0, 0],
+            leftHip: [-0.2, 2.0, 0],
+            rightHip: [0.2, 2.0, 0],
             leftKnee: [-0.2, 1.0, 0],
             rightKnee: [0.2, 1.0, 0],
             leftAnkle: [-0.2, 0.0, 0],
@@ -23,11 +24,12 @@ struct PostureCoreTests {
     private func bottom() -> SquatJoints {
         SquatJoints(
             shoulder: [0, 1.6, 0],
-            hip: [0, 1.0, 0],
+            leftHip: [-0.2, 1.0, 0],
+            rightHip: [0.2, 1.0, 0],
             leftKnee: [-0.2, 0.0, 0],
             rightKnee: [0.2, 0.0, 0],
-            leftAnkle: [-0.2, 0.1, 0.9],
-            rightAnkle: [0.2, 0.1, 0.9]
+            leftAnkle: [-0.2, 0.3, 0.5],
+            rightAnkle: [0.2, 0.3, 0.5]
         )
     }
 

@@ -5,12 +5,14 @@ import SwiftUI
 // Holds the latest analysis result for the UI to display.
 final class SquatViewModel: ObservableObject {
     @Published var repCount = 0
+    @Published var kneeAngle: Float = 0
     @Published var insufficientDepth = false
     @Published var excessiveForwardLean = false
     @Published var kneesCavingIn = false
 
     func apply(_ result: SquatResult) {
         repCount = result.repCount
+        kneeAngle = result.kneeAngle
         insufficientDepth = result.insufficientDepth
         excessiveForwardLean = result.excessiveForwardLean
         kneesCavingIn = result.kneesCavingIn
@@ -41,6 +43,11 @@ struct ContentView: View {
             Text("\(viewModel.repCount)")
                 .font(.system(size: 72, weight: .bold, design: .rounded))
             Text("reps")
+                .foregroundStyle(.secondary)
+
+            // Live knee angle — use this to calibrate the rep thresholds.
+            Text("knee \(Int(viewModel.kneeAngle))°")
+                .font(.system(.footnote, design: .monospaced))
                 .foregroundStyle(.secondary)
 
             if viewModel.insufficientDepth {

@@ -57,6 +57,8 @@ struct BodyTrackingView: UIViewRepresentable {
             guard
                 let leftShoulder = position(skeleton, "left_shoulder_1_joint"),
                 let rightShoulder = position(skeleton, "right_shoulder_1_joint"),
+                let leftHip = position(skeleton, "left_upLeg_joint"),
+                let rightHip = position(skeleton, "right_upLeg_joint"),
                 let leftKnee = position(skeleton, "left_leg_joint"),
                 let rightKnee = position(skeleton, "right_leg_joint"),
                 let leftAnkle = position(skeleton, "left_foot_joint"),
@@ -67,7 +69,8 @@ struct BodyTrackingView: UIViewRepresentable {
 
             return SquatJoints(
                 shoulder: (leftShoulder + rightShoulder) / 2,
-                hip: SIMD3<Float>(0, 0, 0), // the hips joint is the skeleton's origin
+                leftHip: leftHip,
+                rightHip: rightHip,
                 leftKnee: leftKnee,
                 rightKnee: rightKnee,
                 leftAnkle: leftAnkle,

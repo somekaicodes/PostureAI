@@ -5,7 +5,8 @@ import simd
 // matching what ARKit's body-tracking skeleton provides.
 struct SquatJoints {
     var shoulder: SIMD3<Float>
-    var hip: SIMD3<Float>
+    var leftHip: SIMD3<Float>
+    var rightHip: SIMD3<Float>
     var leftKnee: SIMD3<Float>
     var rightKnee: SIMD3<Float>
     var leftAnkle: SIMD3<Float>
@@ -44,7 +45,8 @@ final class PostureCore {
         var frame = PostureFrame()
         frame.timestamp = timestamp
         frame.shoulder = vec(joints.shoulder)
-        frame.hip = vec(joints.hip)
+        frame.leftHip = vec(joints.leftHip)
+        frame.rightHip = vec(joints.rightHip)
         frame.leftKnee = vec(joints.leftKnee)
         frame.rightKnee = vec(joints.rightKnee)
         frame.leftAnkle = vec(joints.leftAnkle)
