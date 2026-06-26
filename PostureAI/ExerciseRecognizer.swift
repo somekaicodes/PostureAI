@@ -1,4 +1,5 @@
 import CoreML
+import Foundation
 import ImageIO
 import Vision
 
@@ -8,19 +9,28 @@ struct ExercisePrediction {
     let confidence: Float
 }
 
+// Lets us hand a non-Sendable value to a background queue. Safe here because
+// the camera frame is only read, never mutated, off the main thread.
+private struct Unchecked<T>: @unchecked Sendable {
+    let value: T
+    init(_ value: T) { self.value = value }
+}
+
 // Runs Vision body pose on the camera feed and feeds a rolling 60-frame window
-// into the ExerciseClassifier Core ML model to name the current exercise.
-@MainActor
-final class ExerciseRecognizer {
+// into the ExerciseClassifier Core ML model to name the current exercise. The
+// heavy work runs on a background queue so it never stalls AR rendering.
+final class ExerciseRecognizer: @unchecked Sendable {
     private let model: ExerciseClassifier
     private let poseRequest = VNDetectHumanBodyPoseRequest()
+    private let queue = DispatchQueue(label: "ExerciseRecognizer")
 
     // The model was trained on 60-frame windows at 30 fps.
     private let windowSize = 60
     private let sampleInterval = 1.0 / 30.0
 
-    private var window: [MLMultiArray] = []
-    private var lastSampleTime: TimeInterval = 0
+    private var window: [MLMultiArray] = [] // touched only on `queue`
+    private var lastSampleTime: TimeInterval = 0 // touched only on the main thread
+    private var isBusy = false // touched only on the main thread
 
     init?() {
         guard let model = try? ExerciseClassifier(configuration: MLModelConfiguration()) else {
@@ -29,12 +39,29 @@ final class ExerciseRecognizer {
         self.model = model
     }
 
-    // Feed one camera frame; returns a prediction once the window is full.
-    func process(pixelBuffer: CVPixelBuffer, timestamp: TimeInterval) -> ExercisePrediction? {
-        // Sample at the model's 30 fps rather than every ARKit frame.
-        guard timestamp - lastSampleTime >= sampleInterval else { return nil }
+    // Feed one camera frame (call on the main thread). Delivers a prediction on
+    // the main thread when the window is full. Skips frames while one is in
+    // flight, so the background work never backs up.
+    func process(pixelBuffer: CVPixelBuffer,
+                 timestamp: TimeInterval,
+                 completion: @escaping (ExercisePrediction) -> Void) {
+        guard !isBusy, timestamp - lastSampleTime >= sampleInterval else { return }
         lastSampleTime = timestamp
+        isBusy = true
 
+        let frame = Unchecked(pixelBuffer)
+        let done = Unchecked(completion)
+        queue.async { [self] in
+            let prediction = classify(frame.value)
+            DispatchQueue.main.async {
+                self.isBusy = false
+                if let prediction { done.value(prediction) }
+            }
+        }
+    }
+
+    // Body pose -> rolling window -> model prediction. Runs on `queue`.
+    private func classify(_ pixelBuffer: CVPixelBuffer) -> ExercisePrediction? {
         // Rear camera in portrait arrives rotated; `.right` puts it upright.
         let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
         guard (try? handler.perform([poseRequest])) != nil,

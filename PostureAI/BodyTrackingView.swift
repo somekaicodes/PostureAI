@@ -44,9 +44,10 @@ struct BodyTrackingView: UIViewRepresentable {
                 guard let self, let frame = arView?.session.currentFrame else { return }
 
                 // Name the exercise from the camera image via Vision + Core ML.
-                if let prediction = self.recognizer?.process(pixelBuffer: frame.capturedImage,
-                                                             timestamp: frame.timestamp) {
-                    self.onExercise(prediction)
+                // Runs on a background queue so it never stalls AR rendering.
+                self.recognizer?.process(pixelBuffer: frame.capturedImage,
+                                         timestamp: frame.timestamp) { [weak self] prediction in
+                    self?.onExercise(prediction)
                 }
 
                 guard let body = frame.anchors.compactMap({ $0 as? ARBodyAnchor }).first else { return }
