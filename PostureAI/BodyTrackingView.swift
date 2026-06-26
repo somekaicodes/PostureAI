@@ -4,12 +4,14 @@ import RealityKit
 import SwiftUI
 
 // Runs the camera + ARKit body tracking and feeds each frame's joints into
-// libposture. Reports the latest result back through `onResult`.
+// libposture. Reports the rep result through `onResult` and the classified
+// exercise through `onExercise`.
 struct BodyTrackingView: UIViewRepresentable {
     let onResult: (SquatResult) -> Void
+    let onExercise: (ExercisePrediction) -> Void
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onResult: onResult)
+        Coordinator(onResult: onResult, onExercise: onExercise)
     }
 
     func makeUIView(context: Context) -> ARView {
@@ -24,11 +26,15 @@ struct BodyTrackingView: UIViewRepresentable {
     final class Coordinator {
         private let core = PostureCore()
         private let overlay = SkeletonOverlay()
+        private let recognizer = ExerciseRecognizer()
         private let onResult: (SquatResult) -> Void
+        private let onExercise: (ExercisePrediction) -> Void
         private var frameSubscription: Cancellable?
 
-        init(onResult: @escaping (SquatResult) -> Void) {
+        init(onResult: @escaping (SquatResult) -> Void,
+             onExercise: @escaping (ExercisePrediction) -> Void) {
             self.onResult = onResult
+            self.onExercise = onExercise
         }
 
         // Process one body-tracking frame on every scene update (main thread).
@@ -36,6 +42,13 @@ struct BodyTrackingView: UIViewRepresentable {
             overlay.addToScene(arView)
             frameSubscription = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak self, weak arView] _ in
                 guard let self, let frame = arView?.session.currentFrame else { return }
+
+                // Name the exercise from the camera image via Vision + Core ML.
+                if let prediction = self.recognizer?.process(pixelBuffer: frame.capturedImage,
+                                                             timestamp: frame.timestamp) {
+                    self.onExercise(prediction)
+                }
+
                 guard let body = frame.anchors.compactMap({ $0 as? ARBodyAnchor }).first else { return }
 
                 self.overlay.update(with: body)

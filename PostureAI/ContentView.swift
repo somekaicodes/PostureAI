@@ -9,6 +9,7 @@ final class SquatViewModel: ObservableObject {
     @Published var insufficientDepth = false
     @Published var excessiveForwardLean = false
     @Published var kneesCavingIn = false
+    @Published var exercise = "—"
 
     func apply(_ result: SquatResult) {
         repCount = result.repCount
@@ -16,6 +17,10 @@ final class SquatViewModel: ObservableObject {
         insufficientDepth = result.insufficientDepth
         excessiveForwardLean = result.excessiveForwardLean
         kneesCavingIn = result.kneesCavingIn
+    }
+
+    func applyExercise(_ prediction: ExercisePrediction) {
+        exercise = "\(prediction.label)  \(Int(prediction.confidence * 100))%"
     }
 }
 
@@ -25,7 +30,8 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             if ARBodyTrackingConfiguration.isSupported {
-                BodyTrackingView { viewModel.apply($0) }
+                BodyTrackingView(onResult: { viewModel.apply($0) },
+                                 onExercise: { viewModel.applyExercise($0) })
                     .ignoresSafeArea()
             } else {
                 unsupportedMessage
@@ -49,6 +55,11 @@ struct ContentView: View {
             Text("knee \(Int(viewModel.kneeAngle))°")
                 .font(.system(.footnote, design: .monospaced))
                 .foregroundStyle(.secondary)
+
+            // Exercise named by the Core ML action classifier.
+            Text(viewModel.exercise.uppercased())
+                .font(.system(.subheadline, design: .rounded).bold())
+                .foregroundStyle(.tint)
 
             if viewModel.insufficientDepth {
                 Label("Go deeper", systemImage: "arrow.down.circle")
