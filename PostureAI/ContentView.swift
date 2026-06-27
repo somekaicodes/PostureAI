@@ -1,5 +1,6 @@
 import ARKit
 import Combine
+import FirebaseAuth
 import SwiftData
 import SwiftUI
 
@@ -51,6 +52,10 @@ final class SquatViewModel: ObservableObject {
 struct ContentView: View {
     @StateObject private var viewModel = SquatViewModel()
     @Environment(\.modelContext) private var modelContext
+    @Environment(AuthService.self) private var authService
+
+    private let firestore = FirestoreService()
+    @State private var showingAccount = false
 
     var body: some View {
         NavigationStack {
@@ -71,6 +76,14 @@ struct ContentView: View {
             .navigationTitle("Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showingAccount = true
+                    } label: {
+                        Image(systemName: authService.isSignedIn
+                              ? "person.crop.circle.fill" : "person.crop.circle")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         HistoryView()
@@ -79,7 +92,13 @@ struct ContentView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingAccount) {
+                AccountView()
+            }
             .onAppear { viewModel.start() }
+            .onChange(of: authService.user?.uid) { _, uid in
+                if uid != nil { Task { await syncOnSignIn() } }
+            }
         }
     }
 
@@ -137,7 +156,39 @@ struct ContentView: View {
                                      squatReps: viewModel.squatReps,
                                      lungeReps: viewModel.lungeReps)
         modelContext.insert(session)
+
+        // Push to the cloud too, if signed in. Local stays the source of truth.
+        if let uid = authService.user?.uid {
+            Task { try? await firestore.upload(session, for: uid) }
+        }
         viewModel.start()
+    }
+
+    // On fresh sign-in: cloud wins if it has data, otherwise upload local.
+    private func syncOnSignIn() async {
+        guard let uid = authService.user?.uid else { return }
+        do {
+            let remote = try await firestore.fetchAll(for: uid)
+            let local = try modelContext.fetch(FetchDescriptor<WorkoutSession>())
+
+            if remote.isEmpty {
+                for session in local {
+                    try await firestore.upload(session, for: uid)
+                }
+            } else {
+                for session in local {
+                    modelContext.delete(session)
+                }
+                for item in remote {
+                    modelContext.insert(WorkoutSession(id: item.id,
+                                                       startedAt: item.startedAt,
+                                                       squatReps: item.squatReps,
+                                                       lungeReps: item.lungeReps))
+                }
+            }
+        } catch {
+            // Sync is best-effort; local data remains intact on failure.
+        }
     }
 }
 
