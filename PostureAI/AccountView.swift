@@ -1,4 +1,4 @@
-import AuthenticationServices
+import GoogleSignInSwift
 import SwiftUI
 
 // Settings sheet: sign-in / profile, plus the daily reminder controls.
@@ -9,8 +9,6 @@ struct AccountView: View {
     @AppStorage("reminderEnabled") private var reminderEnabled = false
     @AppStorage("reminderHour") private var reminderHour = 18
     @AppStorage("reminderMinute") private var reminderMinute = 0
-
-    @State private var appleNonce = ""
 
     var body: some View {
         NavigationStack {
@@ -67,21 +65,10 @@ struct AccountView: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button(action: signInWithGoogle) {
-                Label("Sign in with Google", systemImage: "g.circle.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-
-            SignInWithAppleButton(.signIn) { request in
-                appleNonce = randomNonceString()
-                request.requestedScopes = [.fullName, .email]
-                request.nonce = sha256(appleNonce)
-            } onCompletion: { result in
-                handleAppleResult(result)
-            }
-            .signInWithAppleButtonStyle(.black)
-            .frame(height: 44)
+            // Sign in with Apple is added back once a paid account enables the
+            // capability; AuthService.signInWithApple is already implemented.
+            GoogleSignInButton(action: signInWithGoogle)
+                .frame(height: 44)
         }
     }
 
@@ -89,17 +76,6 @@ struct AccountView: View {
         guard let presenter = topViewController() else { return }
         Task {
             try? await authService.signInWithGoogle(presenting: presenter)
-        }
-    }
-
-    private func handleAppleResult(_ result: Result<ASAuthorization, Error>) {
-        guard case .success(let authorization) = result,
-              let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
-            return
-        }
-        let nonce = appleNonce
-        Task {
-            try? await authService.signInWithApple(credential: credential, nonce: nonce)
         }
     }
 
