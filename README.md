@@ -48,7 +48,9 @@ The app works fully **offline**; sign-in and cloud sync are optional.
 
 ## Architecture
 
-The heart of the app is **[libposture](https://github.com/somekaicodes/libposture)** — a standalone, unit-tested **C++17** engine that does all the motion analysis. The iOS app consumes it through a flat `extern "C"` bridge, so the same tested core could power Android or a desktop tool later.
+The heart of the app is **[libposture](https://github.com/somekaicodes/libposture)** — a standalone, unit-tested **C++17** engine that does all the motion analysis.
+
+The iOS app consumes it through a flat `extern "C"` bridge, so the same tested core could power Android or a desktop tool later.
 
 ```mermaid
 flowchart TD
@@ -85,7 +87,11 @@ flowchart TD
     REP --> UI
 ```
 
-**Why two layers?** The deterministic, math-heavy logic lives in C++ where it can be unit-tested and CI-gated in isolation, independent of any Apple frameworks. Swift handles the camera, ML, UI, and persistence.
+**Why two layers?**
+
+The deterministic, math-heavy logic lives in C++ where it can be unit-tested and CI-gated in isolation, independent of any Apple frameworks.
+
+Swift handles the camera, ML, UI, and persistence.
 
 ---
 
@@ -118,7 +124,11 @@ Beyond the deterministic geometry, the app runs a **Create ML action classifier*
 - **Training:** Create ML *Action Classification* (Vision body-pose sequences over a 60-frame window)
 - **Inference:** `VNDetectHumanBodyPoseRequest` feeds a rolling pose window into the model on a background queue, in parallel with the geometry engine
 
-> **Honest note:** the current model sits at ~49% validation accuracy on a small, single-subject dataset — the demonstrated skill here is the *end-to-end pipeline* (data collection → Create ML → Vision → on-device Core ML inference). Accuracy scales with more and more varied training data; swapping in a better model is a zero-code change.
+> **Note on accuracy** — the model is at ~49% validation, which I acknowledge is low.
+>
+> It's trained on a small, single-subject dataset, and is planned to improve with more and varied training video.
+>
+> What it demonstrates is a Core ML action classifier I trained, adapted, and integrated into the app end to end (data → Create ML → Vision → on-device inference).
 
 This pairs two complementary techniques: **deterministic geometry** for reliable rep counting, and **learned classification** for the harder problem of telling exercises apart — which rules don't scale to.
 
@@ -192,4 +202,6 @@ PostureAI/
 
 ## Development
 
-Built with the help of **[Claude Code](https://claude.com/claude-code)** (Anthropic's agentic coding tool), used for pair-programming, architecture discussion, and code review across the project. The design, decisions, and direction are my own — Claude Code was the workflow that helped me move fast while keeping the code clean and tested.
+Built with the help of **[Claude Code](https://claude.com/claude-code)** (Anthropic's agentic coding tool), used for pair-programming, architecture discussion, and code review across the project.
+
+The design, decisions, and direction are my own — Claude Code was the workflow that helped me move fast while keeping the code clean and tested.
