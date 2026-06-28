@@ -161,7 +161,20 @@ struct ContentView: View {
         if let uid = authService.user?.uid {
             Task { try? await firestore.upload(session, for: uid) }
         }
+        updateWidget()
         viewModel.start()
+    }
+
+    // Write the latest workout summary to the shared App Group for the widget.
+    private func updateWidget() {
+        let descriptor = FetchDescriptor<WorkoutSession>(
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)])
+        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        let latest = sessions.first
+        WidgetSync.write(WorkoutSnapshot(lastWorkoutDate: latest?.startedAt,
+                                         squatReps: latest?.squatReps ?? 0,
+                                         lungeReps: latest?.lungeReps ?? 0,
+                                         totalSessions: sessions.count))
     }
 
     // On fresh sign-in: cloud wins if it has data, otherwise upload local.
@@ -186,6 +199,7 @@ struct ContentView: View {
                                                        lungeReps: item.lungeReps))
                 }
             }
+            updateWidget()
         } catch {
             // Sync is best-effort; local data remains intact on failure.
         }
