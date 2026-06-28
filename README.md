@@ -136,23 +136,42 @@ This pairs two complementary techniques: **deterministic geometry** for reliable
 
 ## Features
 
-<div align="center">
-
-<img src="docs/hero.png" width="230" alt="Live skeleton overlay and rep panel" />
-<img src="docs/history.png" width="230" alt="Workout history with swipe to delete" />
-<img src="docs/widget.png" width="230" alt="Home-screen widget" />
-
-<img src="docs/account-signin.png" width="230" alt="Sign in to sync" />
-<img src="docs/account-signedin.png" width="230" alt="Signed in, syncing" />
-<img src="docs/notification.png" width="230" alt="Daily reminder notification" />
-
-</div>
-
-- **Live tracking & rep panel** — 3D skeleton overlay, live knee angle, rep count, and exercise label
-- **Workout history** — every saved session, persisted with SwiftData, swipe to delete
-- **Home-screen widget** — your latest reps via a shared App Group container
-- **Cloud sync** — Google Sign-In + Firestore, offline-first (local stays the source of truth)
-- **Daily reminder** — a local "Ready to Exercise?" notification at a time you choose
+<table>
+  <tr>
+    <td align="center" width="33%" valign="top">
+      <img src="docs/hero.png" width="200" alt="Live tracking" /><br/>
+      <b>Live Tracking</b><br/>
+      <sub>3D skeleton overlay, knee angle, rep count, and exercise label</sub>
+    </td>
+    <td align="center" width="33%" valign="top">
+      <img src="docs/history.png" width="200" alt="Workout history" /><br/>
+      <b>Workout History</b><br/>
+      <sub>Saved sessions in SwiftData, swipe to delete</sub>
+    </td>
+    <td align="center" width="33%" valign="top">
+      <img src="docs/widget.png" width="200" alt="Home-screen widget" /><br/>
+      <b>Home-Screen Widget</b><br/>
+      <sub>Latest reps via a shared App Group</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%" valign="top">
+      <img src="docs/account-signin.png" width="200" alt="Sign in to sync" /><br/>
+      <b>Cloud Sync</b><br/>
+      <sub>Google Sign-In + Firestore, offline-first</sub>
+    </td>
+    <td align="center" width="33%" valign="top">
+      <img src="docs/account-signedin.png" width="200" alt="Signed in and syncing" /><br/>
+      <b>Signed In</b><br/>
+      <sub>Workouts sync across devices</sub>
+    </td>
+    <td align="center" width="33%" valign="top">
+      <img src="docs/notification.png" width="200" alt="Daily reminder" /><br/>
+      <b>Daily Reminder</b><br/>
+      <sub>Local "Ready to Exercise?" at a time you choose</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
